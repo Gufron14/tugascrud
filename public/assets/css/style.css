@@ -1,0 +1,25 @@
+* {
+    font-family: 'Inter', sans-serif !important;
+  }
+  
+.max-w-md {
+    max-width : 1000px;
+}
+
+.min-h-screen {
+    min-height: 100vh;
+}
+
+.footer {
+    background-color: #343a40;
+    color: white;
+    padding: 10px;
+}
+
+a {
+    text-decoration: none;
+}
+
+
+ 
+  
