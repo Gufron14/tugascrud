@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CartsController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ProductsController;
@@ -16,45 +17,69 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-// Route::get('/', function () {
-//     return view('welcome');
-// });
+Route::get('/', [ProductsController::class,'welcome']);
 
-Route::get('/', [ProductsController::class, 'index']);
+Route::middleware(['auth'])->group(function () {
+    Route::get('/index', [ProductsController::class, 'show'])->name('applications');
 
-// CRUD APLIKASI/PRODUK
+    // CRUD APLIKASI/PRODUK
 
-// Create
-Route::get('/add', [ProductsController::class, 'create']);
-Route::post('/store', [ProductsController::class, 'store']);
-Route::post('/add', [ProductsController::class, 'store'])->name('add.store');
+    // Create
+    Route::get('/add', [ProductsController::class, 'create']);
+    Route::post('/store', [ProductsController::class, 'store']);
+    Route::post('/add', [ProductsController::class, 'store'])->name('add.store');
 
-// Update
-Route::get('/edit/{id}/edit', [ProductsController::class, 'edit'])->name('products.edit');
-Route::put('/product/{id}', [ProductsController::class, 'update'])->name('products.update');
-
-// Delete
-Route::delete('/products/{id}', [ProductsController::class, 'destroy'])->name('products.destroy');
+    // Update
+    Route::get('/products/{id}/edit', [ProductsController::class, 'edit'])->name('products.edit');
+    Route::put('/products/{id}', [ProductsController::class, 'update'])->name('products.update');
 
 
-// CRUD KATEGORI
-
-// Create
-Route::get('/addCategory', [CategoryController::class, 'create']);
-Route::post('/store', [CategoryController::class, 'store']);
-Route::post('/addCategory', [CategoryController::class, 'store'])->name('addCategoty.store');
-
-// Update
-Route::get('/edit/{id}', [CategoryController::class, 'edit'])->name('category.edit');
-Route::put('/product/{id}', [CategoryController::class, 'update'])->name('category.update');
-Route::post('/form-submit', [CategoryController::class, 'submit'])->name('form.submit');
-
-// Delete
-Route::delete('/category/{id}', [CategoryController::class, 'destroy'])->name('category.destroy');
+    // Delete
+    Route::delete('/products/{id}', [ProductsController::class, 'destroy'])->name('products.destroy');
 
 
-// CRUD KERANJANG
+    // CRUD KATEGORI
 
-// Create
-Route::get('/carts', [CartsController::class, 'create']);
-Route::post('/store', [CartsController::class, 'store']);
+    // Create
+    Route::get('/addCategory', [CategoryController::class, 'create'])->name('addCategory');
+    Route::post('/store', [CategoryController::class, 'store']);
+    Route::post('/addCategory', [CategoryController::class, 'store'])->name('addCategoty.store');
+
+    // Update
+    Route::get('/categories/{id}/editCategory', [CategoryController::class, 'edit'])->name('editCategory');
+    Route::put('/categories/{id}', [CategoryController::class, 'update'])->name('categories.editCategory');
+
+    // Delete
+    Route::delete('/category/{id}', [CategoryController::class, 'destroy'])->name('category.destroy');
+
+    // CRUD KERANJANG
+    Route::get('/carts', [CartsController::class, 'cartsPage'])->name('cartsPage');
+});
+
+
+// AUTH
+
+// Login
+Route::get('/auth', [AuthController::class, 'login'])
+    ->name('login')
+    ->middleware('isGuest');
+Route::post('/auth/doLogin', [AuthController::class, 'doLogin'])
+    ->name('doLogin')
+    ->middleware('isGuest');
+Route::get('/auth/logout', [AuthController::class, 'logout'])->name('logout');
+
+// Register
+Route::get('/auth/register', [AuthController::class, 'register'])
+    ->name('register')
+    ->middleware('isGuest');
+Route::post('/auth/doRegister', [AuthController::class, 'doRegister'])
+    ->name('doRegister')
+    ->middleware('isGuest');
+
+
+
+
+
+
+
+

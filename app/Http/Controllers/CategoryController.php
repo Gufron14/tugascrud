@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\category;
+use App\Models\products;
 use Illuminate\Http\Request;
 
 class CategoryController extends Controller
@@ -10,7 +11,7 @@ class CategoryController extends Controller
     //
     public function create()
     {
-        $title = 'Tambah Kategori Aplikasi';
+        $title = 'Kategori Aplikasi';
         $data['categories'] =  category::all();
         return view('product.addCategory', $data, compact('title'));
     }
@@ -33,44 +34,30 @@ class CategoryController extends Controller
         return redirect()->back();
     }
 
-    // public function edit(){
+    public function edit(Request $request, $id){
 
-    //     $title = 'Edit Kategori';
-    //     $categories = categories::all();
-    //     return view('category.edit', compact('title','categories'));
+        $title = 'Edit Kategori';
+        $category = category::findOrFail($id);
+        return view('product.editCategory', compact('category', 'title'));
 
-    // }
+    }
 
-    // public function update(Request $request, string $id){
+    public function update(Request $request, string $id)
+    {
+        $request->validate([
+            'category_name' => 'required|string',
+        ]);
 
-    //     $validated = $request->validate([
-    //         'category_name' => 'required'
-    //     ]);
+        $data = [
+            'category_name' => $request->input('category_name')
+        ];
 
-    //     $category = categories::find($id);
+        category::where('id', $id)->update($data);
 
-    //     categories::where('id', $id)->update([
-    //         'category_name' => $validated['category_name']
-    //     ]);
-
-    //     session()->flash('message', 'Aplikasi berhasil diedit');
-
-    //     return redirect()->back();
-    // }
-
-    // public function submit(Request $request, $id)
-    // {
-
-    //     $category_name = $request->input('category_name');
-
-    //     $categories = category::find('id');
-
-    //     $categories = new category;
-    //     $categories->category_name = $category_name;
-    //     $categories->save();
-
-    //     return redirect()->back();
-    // }
+        session()->flash('Kategori diperbaharui');
+        
+        return redirect()->route('addCategory');
+    }
 
     public function destroy($id){
 
@@ -80,7 +67,8 @@ class CategoryController extends Controller
         // Hapus item produk
         $category->delete();
 
-        return redirect()->back()
-            ->with('success', 'Kategori berhasil dihapus.');
+        session()->flash('message', 'Kategori berhasil dihapus');
+
+        return redirect()->back();
     }
 }

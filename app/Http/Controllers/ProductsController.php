@@ -5,19 +5,22 @@ namespace App\Http\Controllers;
 use App\Models\products;
 use App\Models\category;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\File;
 
 class ProductsController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    // public function welcome(){
+        
+    //     return view('welcome');
+    // }
+
+    public function welcome()
     {
         //
-        $title = 'GufronDroid CRUD';
-        $categories = category::all();
-        $products = products::all();
-        return view('product.index', compact('title','categories', 'products'));
+        return view('welcome');
 
     }
 
@@ -28,6 +31,7 @@ class ProductsController extends Controller
     {
         $title = 'Tambah Aplikasi';
         $data['categories'] =  category::all();
+        $product = products::all();
         return view('product.add', $data, compact('title'));
     }
 
@@ -40,16 +44,25 @@ class ProductsController extends Controller
         $request->validate([
             'app_name' => 'required|unique:products',
             'price' => 'required|numeric',
-            'category_id' => 'required|exists:categories,id'
+            'category_id' => 'required|exists:categories,id',
+            'description' => 'string',
+            'logo' => 'required|mimes:jpeg,jpg,png,gif'
         ]);
 
+        $logo_file = $request->file('logo');
+        $logo_ekstensi = $logo_file->extension();
+        $logo_nama = date('ymdhis').".".$logo_ekstensi;
+        $logo_file->move(public_path('logo'), $logo_nama);
+
         // simpan data ke database
-        $product = new products;
-        $product->app_name = $request->app_name;
-        $product->price = $request->price;
-        $product->description = $request->description;
-        $product->category_id = $request->category_id; // tambahkan ini
-        $product->save();
+        $data = [
+            'app_name' => $request->input('app_name'),
+            'price' => $request->input('price'),
+            'category_id' => $request->input('category_id'),
+            'description' => $request->input('description'),
+            'logo' => $logo_nama
+        ];
+        Products::create($data);
 
         // kirim pesan ke halaman add
         session()->flash('message', 'Aplikasi berhasil ditambahkan');
@@ -61,9 +74,14 @@ class ProductsController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Products $product)
     {
         //
+        $title = 'GufronDroid CRUD';
+        $categories = category::all();
+        $products = products::all();
+        return view('product.index', compact('title','categories', 'products'));
+        
     }
 
     /**
@@ -71,44 +89,62 @@ class ProductsController extends Controller
      */
     public function edit(string $id)
     {
-        //
         $title = 'Edit Aplikasi';
         $product = Products::findOrFail($id);
-        $categories = Category::all();
-        
-        return view('product.edit', compact('title', 'products', 'categories'));
+        $data['categories'] = Category::all();
+        return view('product.edit', $data, compact('product', 'title'));
+    
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, $id)
     {
-        // validasi data input
-        $validated = $request->validate([
-            'category_id' => 'required|exists:categories,id',
-            'app_name' => 'required',
-            'price' => 'required|numeric',
-            'description' => 'required',
-            ]);
+    $request->validate([
+        'app_name' => 'required|unique:products,app_name,'.$id,
+        'price' => 'required|numeric|min:0',
+        'category_id' => 'required|exists:categories,id',
+        'description' => 'required|string',
+        'logo' => 'nullable|mimes:jpeg,jpg,png,gif'
+    ]); 
 
-        // ambil data produk dengan ID tertentu
-        $product = products::findOrFail($id);
+    $product = Products::find($id);
+    if(!$product){
+        return back()->withErrors(['message' => 'aplikasi tidak ditemukan']);
+    }
 
-        // update data produk dengan data input yang telah divalidasi
-        products::where('id', $id)->update([
-            'category_id' => $validated['category_id'],
-            'app_name' => $validated['app_name'],
-            'price' => $validated['price'],
-            'description' => $validated['description']
+    $data = [
+        'app_name' => $request->input('app_name'),
+        'price' => $request->input('price'),
+        'description' => $request->input('description'),
+        'category_id' => $request->input('category_id'),
+    ];
+
+    if($request->hasFile('logo')) {
+        $request->validate([
+            'logo' => 'mimes:jpeg,jpg,png,gif'
         ]);
+    $logo_file = $request->file('logo');
+    $logo_ekstensi = $logo_file->extension();
+    $logo_nama = date('ymdhis').".".$logo_ekstensi;
+    $logo_file->move(public_path('logo'), $logo_nama);
+        
+    $data_logo = Products::where('app_name', $id)->first();
+    File::delete(public_path('logo'."/".$data_logo->logo));
 
-        // kirim pesan ke halaman add
-        session()->flash('message', 'Aplikasi berhasil diedit');
+    $data ['logo'] = $logo_nama;
+    
+    }
+    
+    $product->update($data);
 
-        // redirect ke halaman edit
-        return redirect()->route('products.edit', $product->id);
-        }
+    session()->flash('message', 'Aplikasi berhasil diedit');
+
+    return redirect()->action([ProductsController::class, 'show']);
+}
+
+
 
     /**
      * Remove the specified resource from storage.
@@ -126,7 +162,13 @@ class ProductsController extends Controller
         // Hapus item produk
         $products->delete();
 
-        return redirect()->back()
-            ->with('success', 'Berhasil dihapus.');
+        if ($products->logo) {
+            File::delete(public_path('logo') . "/" . $products->logo);
+        }
+
+        session()->flash('message', 'Aplikasi berhasil dihapus');
+
+        return redirect()->back();
     }
+
 }
